@@ -58,13 +58,16 @@ class RedBook(BaseParser):
                 new_url = (
                     "https://ci.xiaohongshu.com/notes_pre_post/"
                     + f"{spectrum_str}{image_id}"
-                    + "?imageView2/format/jpg"
+                    + "?imageView2/format/png"
                 )
                 img_info = ImgInfo(url=new_url)
                 # 如果原图片网址中没有 notes_pre_post 关键字，不支持替换域名，使用原域名
+                # if "notes_pre_post" not in img_item["urlDefault"]:
+                #     new_url = img_item["urlDefault"]
+                #     img_info.url = img_item["urlDefault"]
                 if "notes_pre_post" not in img_item["urlDefault"]:
-                    new_url = img_item["urlDefault"]
-                    img_info.url = img_item["urlDefault"]
+                    new_url = "https://ci.xiaohongshu.com/" + f"{image_id}" + "?imageView2/format/png"
+                    img_info.url = new_url
                 # 是否有 livephoto 视频地址
                 if img_item.get("livePhoto", False) and (
                     h264_data := img_item.get("stream", {}).get("h264", [])
