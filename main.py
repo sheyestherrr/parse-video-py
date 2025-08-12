@@ -58,7 +58,7 @@ async def read_item(request: Request):
     )
 
 
-@app.get("/video/share/url/parse", dependencies=get_auth_dependency())
+@app.get("/share", dependencies=get_auth_dependency())
 async def share_url_parse(url: str):
     url_reg = re.compile(r"http[s]?:\/\/[\w.-]+[\w\/-]*[\w.-]*\??[\w=&:\-\+\%]*[/]*")
     video_share_url = url_reg.search(url).group()
