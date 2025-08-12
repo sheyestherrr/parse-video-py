@@ -40,7 +40,7 @@ def get_auth_dependency() -> list[Depends]:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect username or password",
-                headers={"WWW-Authenticate": "Basic"},
+                headers={"WWW-Authenticate": 'Basic realm="使用该解析服务需要进行认证", charset="UTF-8"'},
             )
         return credentials
 
