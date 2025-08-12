@@ -77,6 +77,9 @@ class VideoInfo:
     # 视频标题
     title: str = ""
 
+    # 文案内容
+    desc: str = ""
+
     # 音乐播放地址
     music_url: str = ""
 

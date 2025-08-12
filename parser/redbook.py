@@ -79,6 +79,7 @@ class RedBook(BaseParser):
             video_url=video_url,
             cover_url=data["imageList"][0]["urlDefault"],
             title=data["title"],
+            desc=data["desc"],
             images=images,
             author=VideoAuthor(
                 uid=data["user"]["userId"],
