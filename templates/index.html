@@ -140,7 +140,7 @@ function setValue() {
     }
 
     // 链接地址需要用encodeURIComponent加密, 否则会导致原视频链接中&后的字符被识别为本链接的参数而丢弃
-    xmlhttp.open("GET", "/video/share/url/parse?url=" + encodeURIComponent(v), false);
+    xmlhttp.open("GET", "/share?url=" + encodeURIComponent(v), false);
     xmlhttp.send();
     var jsonObj = JSON.parse(xmlhttp.responseText);
     console.log(jsonObj);
