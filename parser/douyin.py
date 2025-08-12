@@ -73,16 +73,28 @@ class DouYin(BaseParser):
         # 获取图集图片地址
         images = []
         # 如果data含有 images，并且 images 是一个列表
-        if "images" in data and isinstance(data["images"], list):
+        # if "images" in data and isinstance(data["images"], list):
+        #     # 获取每个图片的url_list中的第一个元素，非空时添加到images列表中
+        #     for img in data["images"]:
+        #         if (
+        #             "url_list" in img
+        #             and isinstance(img["url_list"], list)
+        #             and len(img["url_list"]) > 0
+        #             and len(img["url_list"][0]) > 0
+        #         ):
+        #             images.append(ImgInfo(url=img["url_list"][0]))
+
+        # Update jpg format
+        if "img_bitrate" in data and isinstance(data["img_bitrate"], list):
             # 获取每个图片的url_list中的第一个元素，非空时添加到images列表中
-            for img in data["images"]:
+            for img in data["img_bitrate"][-1]['images']:
                 if (
                     "url_list" in img
                     and isinstance(img["url_list"], list)
                     and len(img["url_list"]) > 0
-                    and len(img["url_list"][0]) > 0
+                    and len(img["url_list"][-1]) > 0
                 ):
-                    images.append(ImgInfo(url=img["url_list"][0]))
+                    images.append(ImgInfo(url=img["url_list"][-1]))
 
         # 获取视频播放地址
         video_url = data["video"]["play_addr"]["url_list"][0].replace("playwm", "play")
