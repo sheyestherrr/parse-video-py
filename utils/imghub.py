@@ -105,6 +105,7 @@ def _sync_process_media_item(data: dict):
     batch_upload_media(img_files, img_folder)
     batch_upload_media(video_files, video_folder)
     print("Upload finish")
+    return {}
 
 async def process_media_item(data: dict):
     data = json.loads(json.dumps(data, ensure_ascii=False, default=lambda x: x.__dict__))

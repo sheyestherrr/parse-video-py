@@ -1,7 +1,6 @@
 import os
 import re
 import secrets
-import asyncio
 from utils.imghub import process_media_item
 from parser import VideoSource, parse_video_id, parse_video_share_url
 
@@ -67,7 +66,7 @@ async def share_url_parse(url: str):
 
     try:
         video_info = await parse_video_share_url(video_share_url)
-        asyncio.create_task(process_media_item(video_info.__dict__))
+        _ = await process_media_item(video_info.__dict__)
         return {"code": 200, "msg": "解析成功", "data": video_info.__dict__}
     except Exception as err:
         return {
