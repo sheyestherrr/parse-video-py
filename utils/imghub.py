@@ -3,6 +3,7 @@ import re
 import asyncio
 import requests
 import mimetypes
+import json
 from pathlib import Path
 from requests.exceptions import Timeout
 from urllib.parse import urlparse, unquote
@@ -67,15 +68,13 @@ def batch_upload_media(upload_files:dict, upload_folder):
         try:
             resp = requests.post(url, params=params, files=files, headers=headers, timeout=60)
             resp.raise_for_status()
-            return resp
         except Exception as e:
             print(f"上传失败 {filename}: {str(e)}")
-            return None
 
 def _sync_process_media_item(data: dict):
+    print(data)
     if 'code' in data.keys() or 'msg' in data.keys():
         data = data['data']
-
     image_urls = []
     video_urls = []
 
@@ -97,15 +96,18 @@ def _sync_process_media_item(data: dict):
     
     img_files = batch_download(image_urls)
     video_files = batch_download(video_urls)
+    print(f"image: {len(img_files)}")
+    print(f"video: {len(video_files)}")
 
     img_folder = f'img/{author_name}'
     video_folder = f'video/{author_name}'
-
+    print('uploading...')
     batch_upload_media(img_files, img_folder)
     batch_upload_media(video_files, video_folder)
+    print("Upload finish")
 
 async def process_media_item(data: dict):
-
+    data = json.loads(json.dumps(data, ensure_ascii=False, default=lambda x: x.__dict__))
     return await asyncio.to_thread(
         _sync_process_media_item,
         data 
