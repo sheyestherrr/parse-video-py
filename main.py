@@ -66,7 +66,6 @@ async def share_url_parse(url: str):
 
     try:
         video_info = await parse_video_share_url(video_share_url)
-        _ = await process_media_item(video_info.__dict__)
         return {"code": 200, "msg": "解析成功", "data": video_info.__dict__}
     except Exception as err:
         return {
@@ -74,6 +73,20 @@ async def share_url_parse(url: str):
             "msg": str(err),
         }
 
+@app.get("/te", dependencies=get_auth_dependency())
+async def share_url_parse(url: str):
+    url_reg = re.compile(r"http[s]?:\/\/[\w.-]+[\w\/-]*[\w.-]*\??[\w=&:\-\+\%]*[/]*")
+    video_share_url = url_reg.search(url).group()
+
+    try:
+        video_info = await parse_video_share_url(video_share_url)
+        _ = await process_media_item(video_info.__dict__)
+        return {"code": 200, "msg": "解析成功", "data": video_info.__dict__}
+    except Exception as err:
+        return {
+            "code": 500,
+            "msg": str(err),
+        }
 
 @app.get("/video/id/parse", dependencies=get_auth_dependency())
 async def video_id_parse(source: VideoSource, video_id: str):
