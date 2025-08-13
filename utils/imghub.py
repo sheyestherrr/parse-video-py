@@ -8,9 +8,6 @@ from pathlib import Path
 from requests.exceptions import Timeout
 from urllib.parse import urlparse, unquote
 
-IMG_DOMAIN = os.getenv("IMG_DOMAIN")
-UPLOAD_TOKEN = os.getenv("UPLOAD_TOKEN")
-
 def clean_filename(filename):
     return re.sub(r'[^a-zA-Z0-9_.]', '_', filename)
 
@@ -52,6 +49,8 @@ def batch_download(download_url: list):
     return downloaded
 
 def batch_upload_media(upload_files:dict, upload_folder):
+    IMG_DOMAIN = os.getenv("IMG_DOMAIN")
+    UPLOAD_TOKEN = os.getenv("UPLOAD_TOKEN")
     headers = {
             "Authorization": f"Bearer {UPLOAD_TOKEN}"
         }
