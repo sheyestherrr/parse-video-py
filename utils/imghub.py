@@ -15,6 +15,9 @@ CONCURRENT_LIMIT = 5  # 可根据实际情况调整
 def clean_filename(filename):
     return re.sub(r'[^a-zA-Z0-9_.]', '_', filename)
 
+def clean_author_name(author_name):
+    return re.sub(r'[^\u4e00-\u9fa5a-zA-Z0-9_]', '_', author_name)
+
 async def download_media(url, retries=3, timeout=60):
     # 保持不变
     async with httpx.AsyncClient() as client:
@@ -139,7 +142,7 @@ async def _async_process_media_item(data: dict):
     image_urls = []
     video_urls = []
 
-    author_name = data['author']['name']
+    author_name = clean_author_name(data['author']['name'])
     
     video_url = data.get('video_url', '')
 
