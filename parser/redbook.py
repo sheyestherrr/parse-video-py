@@ -127,8 +127,7 @@ class RedBook(BaseParser):
         
         for attempt in range(max_retries):
             try:
-                # 每次重试都创建新的客户端实例
-                transport = httpx.HTTPTransport(retries=5)
+                transport = httpx.AsyncHTTPTransport(retries=5)
                 async with httpx.AsyncClient(
                     transport=transport, 
                     timeout=10, 
@@ -148,4 +147,5 @@ class RedBook(BaseParser):
                     await asyncio.sleep(retry_delay)
         # 所有重试都失败
         return False
+    
     
