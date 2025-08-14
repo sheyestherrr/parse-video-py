@@ -17,10 +17,11 @@ async def download_media(url, retries=3, timeout=60):
     async with httpx.AsyncClient() as client:
         for i in range(retries):
             try:
-                response = await client.get(url, stream=True, timeout=timeout)
+                response = await client.get(url, timeout=timeout)
                 response.raise_for_status()
-                content = await response.aread()
+                content = response.content
 
+                # 获取文件名
                 content_disposition = response.headers.get('Content-Disposition', '')
                 parsed_url = urlparse(url)
                 filename = clean_filename(unquote(Path(parsed_url.path).name))
@@ -31,7 +32,7 @@ async def download_media(url, retries=3, timeout=60):
                     if ext:
                         filename += ext 
                     else:
-                        filename+='.bin'
+                        filename += '.bin'
                 
                 return content, filename, response
             except httpx.TimeoutException:
@@ -135,3 +136,4 @@ async def process_media_item(data: dict):
     data = json.loads(json.dumps(data, ensure_ascii=False, default=lambda x: x.__dict__))
     return await _async_process_media_item(data)
     
+
