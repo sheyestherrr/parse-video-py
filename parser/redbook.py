@@ -99,20 +99,53 @@ class RedBook(BaseParser):
     async def parse_video_id(self, video_id: str) -> VideoInfo:
         raise NotImplementedError("小红书暂不支持直接解析视频ID")
     
-    async def check_resource_link(self, url:str) -> bool:
+    # async def check_resource_link(self, url:str) -> bool:
+    #     headers = {
+    #         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+    #         "Range": "bytes=0-99"
+    #     }
+    #     transport = httpx.HTTPTransport(retries=2)
+    #     try:
+    #         async with httpx.AsyncClient(transport=transport, timeout=5) as client:
+    #             response = await client.get(
+    #                 url,
+    #                 headers=headers,
+    #                 follow_redirects=True
+    #             )
+    #         print(response.status_code)
+    #         return response.status_code in (200, 206)
+    #     except:
+    #         return False
+    
+    async def check_resource_link(self, url: str) -> bool:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
             "Range": "bytes=0-99"
         }
-        transport = httpx.HTTPTransport(retries=2)
-        try:
-            async with httpx.AsyncClient(transport=transport, timeout=5) as client:
-                response = await client.get(
-                    url,
-                    headers=headers,
+        max_retries = 3  # 设置最大重试次数
+        retry_delay = 1  # 重试间隔时间（秒）
+        
+        for attempt in range(max_retries):
+            try:
+                # 每次重试都创建新的客户端实例
+                transport = httpx.HTTPTransport(retries=5)
+                async with httpx.AsyncClient(
+                    transport=transport, 
+                    timeout=10, 
                     follow_redirects=True
-                )
-            print(response.status_code)
-            return response.status_code in (200, 206)
-        except:
-            return False
+                ) as client:
+                    response = await client.get(
+                        url,
+                        headers=headers,
+                        follow_redirects=True
+                    )
+                print(f"Check resource {url} (attempt {attempt+1}/{max_retries}): Status {response.status_code}")
+                return response.status_code in (200, 206)
+            except Exception as e:
+                print(f"Check resource failed {url} (attempt {attempt+1}/{max_retries}): {str(e)}")
+                # 如果不是最后一次尝试，等待后重试
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(retry_delay)
+        # 所有重试都失败
+        return False
+    
