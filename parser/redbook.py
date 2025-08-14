@@ -1,5 +1,5 @@
 import re
-
+import asyncio
 import fake_useragent
 import httpx
 import yaml
