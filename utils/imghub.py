@@ -9,11 +9,14 @@ from urllib.parse import urlparse, unquote
 
 IMG_DOMAIN = os.getenv("IMG_DOMAIN")
 UPLOAD_TOKEN = os.getenv("UPLOAD_TOKEN")
+# 新增：控制并发数，避免请求过多被限制
+CONCURRENT_LIMIT = 5  # 可根据实际情况调整
 
 def clean_filename(filename):
     return re.sub(r'[^a-zA-Z0-9_.]', '_', filename)
 
 async def download_media(url, retries=3, timeout=60):
+    # 保持不变
     async with httpx.AsyncClient() as client:
         for i in range(retries):
             try:
@@ -21,7 +24,6 @@ async def download_media(url, retries=3, timeout=60):
                 response.raise_for_status()
                 content = response.content
 
-                # 获取文件名
                 content_disposition = response.headers.get('Content-Disposition', '')
                 parsed_url = urlparse(url)
                 filename = clean_filename(unquote(Path(parsed_url.path).name))
@@ -48,35 +50,55 @@ async def download_media(url, retries=3, timeout=60):
 
 async def batch_download(download_url: list):
     downloaded = {}
-
-    for down_url in download_url:
-        content, filename, _ = await download_media(down_url)
+    if not download_url:
+        return downloaded
+        
+    # 使用信号量控制并发数
+    semaphore = asyncio.Semaphore(CONCURRENT_LIMIT)
+    
+    async def bounded_download(url):
+        async with semaphore:  # 限制并发
+            return await download_media(url)
+    
+    # 并发执行所有下载任务
+    tasks = [bounded_download(url) for url in download_url]
+    results = await asyncio.gather(*tasks)
+    
+    # 收集结果
+    for content, filename, _ in results:
         if content and filename:
             downloaded[filename] = content
+            
     return downloaded
 
-async def upload_single_file(client, filename, file_content, url, params, headers, retries=3):
-    """单个文件上传，支持重试"""
+# 修改：单个文件上传增加信号量参数
+async def upload_single_file(client, filename, file_content, url, params, headers, semaphore, retries=3):
+    """单个文件上传，支持重试和并发控制"""
     for i in range(retries):
         try:
-            files = {"file": (filename, file_content)}
-            resp = await client.post(
-                url, 
-                params=params, 
-                files=files, 
-                headers=headers, 
-                timeout=60
-            )
-            resp.raise_for_status()
-            print(f"上传成功 {filename} (尝试 {i+1}/{retries})")
-            return True
+            async with semaphore:  # 限制并发
+                files = {"file": (filename, file_content)}
+                resp = await client.post(
+                    url, 
+                    params=params, 
+                    files=files, 
+                    headers=headers, 
+                    timeout=60
+                )
+                resp.raise_for_status()
+                print(f"上传成功 {filename} (尝试 {i+1}/{retries})")
+                return True
         except Exception as e:
             print(f"上传失败 {filename} (尝试 {i+1}/{retries}): {str(e)}")
-            if i == retries - 1:  # 最后一次重试失败
+            if i == retries - 1:
                 return False
             await asyncio.sleep(1)
 
+# 修改：批量上传改为并发执行
 async def batch_upload_media(upload_files:dict, upload_folder, retries=3):
+    if not upload_files:
+        return
+        
     headers = {
             "Authorization": f"Bearer {UPLOAD_TOKEN}"
         }
@@ -88,14 +110,26 @@ async def batch_upload_media(upload_files:dict, upload_folder, retries=3):
         "autoRetry": "true"
     }
 
+    # 控制上传并发数
+    semaphore = asyncio.Semaphore(CONCURRENT_LIMIT)
+    
     async with httpx.AsyncClient() as client:
-        for filename, file_content in upload_files.items():
-            success = await upload_single_file(
+        # 创建所有上传任务
+        tasks = [
+            upload_single_file(
                 client, filename, file_content, 
-                url, params, headers, 
+                url, params, headers, semaphore,  # 传入信号量
                 retries=retries
-            )
+            ) 
+            for filename, file_content in upload_files.items()
+        ]
+        # 并发执行
+        results = await asyncio.gather(*tasks)
+        
+        # 检查失败的任务
+        for idx, success in enumerate(results):
             if not success:
+                filename = list(upload_files.keys())[idx]
                 print(f"文件 {filename} 经过 {retries} 次重试后仍上传失败")
 
 async def _async_process_media_item(data: dict):
@@ -119,21 +153,28 @@ async def _async_process_media_item(data: dict):
     if video_url:
         video_urls.append(video_url)
     
-    img_files = await batch_download(image_urls)
-    video_files = await batch_download(video_urls)
+    # 并行下载图片和视频
+    img_files, video_files = await asyncio.gather(
+        batch_download(image_urls),
+        batch_download(video_urls)
+    )
+    
     print(f"image: {len(img_files)}")
     print(f"video: {len(video_files)}")
 
     img_folder = f'img/{author_name}'
     video_folder = f'video/{author_name}'
     print('uploading...')
-    await batch_upload_media(img_files, img_folder)
-    await batch_upload_media(video_files, video_folder)
+    
+    # 并行上传图片和视频
+    await asyncio.gather(
+        batch_upload_media(img_files, img_folder),
+        batch_upload_media(video_files, video_folder)
+    )
+    
     print("Upload finish")
     return {}
 
 async def process_media_item(data: dict):
     data = json.loads(json.dumps(data, ensure_ascii=False, default=lambda x: x.__dict__))
     return await _async_process_media_item(data)
-    
-
