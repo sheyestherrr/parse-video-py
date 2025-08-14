@@ -66,7 +66,8 @@ class RedBook(BaseParser):
                     )
                 if not self.check_resource_link(new_url):
                     new_url = new_url.replace("format/png", "format/jpg")
-                    
+                    print(f'replace: {new_url}')
+                
                 img_info = ImgInfo(url=new_url)
 
                 # 如果原图片网址中没有 notes_pre_post 关键字，不支持替换域名，使用原域名
@@ -111,6 +112,7 @@ class RedBook(BaseParser):
                     headers=headers,
                     follow_redirects=True
                 )
+            print(response.status_code)
             return response.status_code in (200, 206)
         except:
             return False
