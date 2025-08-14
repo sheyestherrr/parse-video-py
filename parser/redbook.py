@@ -64,7 +64,7 @@ class RedBook(BaseParser):
                         + f"{spectrum_str}{image_id}"
                         + "?imageView2/format/png"
                     )
-                if not self.check_resource_link(new_url):
+                if not await self.check_resource_link(new_url):
                     new_url = new_url.replace("format/png", "format/jpg")
                     print(f'replace: {new_url}')
                 
