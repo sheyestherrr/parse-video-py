@@ -106,8 +106,8 @@ class RedBook(BaseParser):
         }
         transport = httpx.HTTPTransport(retries=2)
         try:
-            with httpx.Client(transport=transport, timeout=5) as client:
-                response = client.get(
+            async with httpx.AsyncClient(transport=transport, timeout=5) as client:
+                response = await client.get(
                     url,
                     headers=headers,
                     follow_redirects=True
