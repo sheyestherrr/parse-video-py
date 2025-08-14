@@ -67,7 +67,8 @@ class RedBook(BaseParser):
                 #     img_info.url = img_item["urlDefault"]
                 if "notes_pre_post" not in img_item["urlDefault"]:
                     new_url = "https://ci.xiaohongshu.com/" + f"{image_id}" + "?imageView2/format/png"
-                    img_info.url = new_url
+                    if self.check_resource_link(new_url):
+                        img_info.url = new_url
                 # 是否有 livephoto 视频地址
                 if img_item.get("livePhoto", False) and (
                     h264_data := img_item.get("stream", {}).get("h264", [])
@@ -91,3 +92,20 @@ class RedBook(BaseParser):
 
     async def parse_video_id(self, video_id: str) -> VideoInfo:
         raise NotImplementedError("小红书暂不支持直接解析视频ID")
+    
+    async def check_resource_link(self, url:str) -> bool:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+            "Range": "bytes=0-99"
+        }
+        transport = httpx.HTTPTransport(retries=2)
+        try:
+            with httpx.Client(transport=transport, timeout=5) as client:
+                response = client.get(
+                    url,
+                    headers=headers,
+                    follow_redirects=True
+                )
+            return response.status_code in (200, 206)
+        except:
+            return False
