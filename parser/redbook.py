@@ -42,6 +42,12 @@ class RedBook(BaseParser):
         h264_data = (
             data.get("video", {}).get("media", {}).get("stream", {}).get("h264", [])
         )
+        # 视频原始连接（很大） 在线解析可用：https://dy.kukutool.com/zh-Hans-SG
+        # 拼接之后会类似 https://sns-video-hw.xhscdn.com/pre_post/1040g0cg31npr8aqh6g6g5o8ef2u85ktflhj716g
+        # origin_data获取到的只有 pre_post/1040g0cg31npr8aqh6g6g5o8ef2u85ktflhj716g， 需要手动补前缀
+        origin_data = (
+            data.get("video", {}).get("consumer", {}).get("originVideoKey", {})
+        )
         if len(h264_data) > 0:
             video_url = h264_data[0].get("masterUrl", "")
 
